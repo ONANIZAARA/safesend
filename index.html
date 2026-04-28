@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SafeSend — Scam Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #0f1117;
+    --card:    #1e2334;
+    --border:  #2a3050;
+    --gold:    #c9a84c;
+    --text:    #e8e8f0;
+    --muted:   #8890a8;
+    --danger:  #e05a5a;
+    --warning: #e0a84c;
+    --success: #4caf82;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  textarea, input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 16px;
+  }
+
+  textarea { height: 120px; resize: none; }
+  textarea:focus, input:focus { border-color: var(--gold); }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    background: var(--gold);
+    color: #0f1117;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  button:hover { background: #dbb85a; }
+
+  .result {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .result.show { display: block; }
+
+  .risk-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  .HIGH-RISK  { background: #e05a5a22; color: var(--danger);  border: 1px solid var(--danger); }
+  .SUSPICIOUS { background: #e0a84c22; color: var(--warning); border: 1px solid var(--warning); }
+  .SAFE       { background: #4caf8222; color: var(--success); border: 1px solid var(--success); }
+
+  .score-bar-wrap {
+    background: var(--bg);
+    border-radius: 10px;
+    height: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--muted); }
+
+  .keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .keyword-tag {
+    background: #e05a5a22;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+  }
+
+  .advice-box {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .report-section { margin-top: 12px; }
+
+  .report-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+
+  .btn-report {
+    background: #e05a5a22;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    font-weight: 600;
+  }
+
+  .btn-report:hover {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .toast.show { transform: none; opacity: 1; }
+  .toast.success { background: var(--success); color: #fff; }
+  .toast.error   { background: var(--danger);  color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1>SafeSend</h1>
+    <p>Scam Detection System for East Africa</p>
+  </div>
+
+  <!-- Check Message Card -->
+  <div class="card">
+    <label>Message to check</label>
+    <textarea id="message" placeholder="Paste the suspicious message here..."></textarea>
+
+    <label>Sender phone number (optional)</label>
+    <input id="phone" type="text" placeholder="+256700000000" />
+
+    <button onclick="checkMessage()">🔍 Check for Scam</button>
+  </div>
+
+  <!-- Result Card -->
+  <div class="result" id="result">
+    <div id="risk-badge" class="risk-badge"></div>
+
+    <div class="score-bar-wrap">
+      <div class="score-bar" id="score-bar"></div>
+    </div>
+
+    <div class="detail-row">
+      <span class="detail-label">Risk Score</span>
+      <span id="risk-score"></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Number Flagged</span>
+      <span id="number-flagged"></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Keywords Found</span>
+      <span id="keyword-count"></span>
+    </div>
+
+    <div class="keywords" id="keywords"></div>
+
+    <div class="advice-box" id="advice"></div>
+  </div>
+
+  <!-- Report Number Card -->
+  <div class="card report-section">
+    <h3>📢 Report a Scam Number</h3>
+    <label>Phone number</label>
+    <input id="report-phone" type="text" placeholder="+256700000000" />
+    <label>Reason</label>
+    <input id="report-reason" type="text" placeholder="e.g. Asked for PIN, fake MTN alert" />
+    <button class="btn-report" onclick="reportNumber()">⚠️ Report Number</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = "http://127.0.0.1:8000";
+
+  async function checkMessage() {
+    const message = document.getElementById("message").value.trim();
+    const phone   = document.getElementById("phone").value.trim();
+
+    if (!message) {
+      showToast("Please enter a message to check", "error");
+      return;
+    }
+
+    const res  = await fetch(`${API}/check-message`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ message, phone })
+    });
+
+    const data = await res.json();
+    showResult(data);
+  }
+
+  function showResult(data) {
+    const result = document.getElementById("result");
+    result.classList.add("show");
+
+    // Badge
+    const badge = document.getElementById("risk-badge");
+    badge.textContent = data.level;
+    badge.className   = `risk-badge ${data.level.replace(" ", "-")}`;
+
+    // Score bar
+    const bar   = document.getElementById("score-bar");
+    const score = data.risk_score * 100;
+    bar.style.width      = score + "%";
+    bar.style.background = score >= 50 ? "#e05a5a" : score > 0 ? "#e0a84c" : "#4caf82";
+
+    // Details
+    document.getElementById("risk-score").textContent     = (data.risk_score * 100).toFixed(0) + "%";
+    document.getElementById("number-flagged").textContent = data.number_flagged ? "⚠️ YES" : "✅ No";
+    document.getElementById("keyword-count").textContent  = data.keywords_found.length;
+
+    // Keywords
+    const kw = document.getElementById("keywords");
+    kw.innerHTML = data.keywords_found.map(k =>
+      `<span class="keyword-tag">${k}</span>`
+    ).join("");
+
+    // Advice
+    document.getElementById("advice").textContent = data.advice;
+
+    result.scrollIntoView({ behavior: "smooth" });
+  }
+
+  async function reportNumber() {
+    const phone  = document.getElementById("report-phone").value.trim();
+    const reason = document.getElementById("report-reason").value.trim();
+
+    if (!phone) {
+      showToast("Please enter a phone number", "error");
+      return;
+    }
+
+    const res  = await fetch(`${API}/report-number`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ phone, reason })
+    });
+
+    const data = await res.json();
+    showToast(data.message, "success");
+    document.getElementById("report-phone").value  = "";
+    document.getElementById("report-reason").value = "";
+  }
+
+  function showToast(msg, type) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className   = `toast show ${type}`;
+    setTimeout(() => { t.className = "toast"; }, 3000);
+  }
+</script>
+</body>
+</html>
